@@ -1,0 +1,7 @@
+node_modules/
+.docker_pgdata/
+.docker_pgdata_test/
+.idea/
+
+.env
+package-lock.json
