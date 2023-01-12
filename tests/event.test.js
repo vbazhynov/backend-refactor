@@ -2,7 +2,7 @@ const chai = require("chai");
 const chaiHttp = require("chai-http");
 const jwt = require("jsonwebtoken");
 
-const { app } = require("../index");
+const { server } = require("../index");
 const { expect } = chai;
 
 console.log = () => {};
@@ -26,12 +26,16 @@ const DATA = {
 const JWT_ADMIN = { type: 'admin' };
 const JWT_CLIENT = { type: 'client' };
 
-describe("/events route", () => {
-  describe("POST /", async () => {
-    it("should create new event", async () => {
+describe("EVENTS_ROUTES", () => {
+  afterAll(() => {
+    server.close();
+  });
+
+  describe("EVENTS_ROUTE_POST", () => {
+    it("POST_EVENT", async () => {
       const token = jwt.sign(JWT_ADMIN, process.env.JWT_SECRET);
       const { status, body } = await chai
-        .request(app)
+        .request(server)
         .post("/events")
         .set("authorization", `Bearer ${token}`)
         .send(DATA);
@@ -58,7 +62,7 @@ describe("/events route", () => {
       );
     });
 
-    it("should return status 400 if odds field has invalid value", async () => {
+    it("POST_EVENT_INVALID_ODDS", async () => {
       const data = {
         type: "football",
         homeTeam: "Ukraine",
@@ -73,7 +77,7 @@ describe("/events route", () => {
 
       const token = jwt.sign(JWT_ADMIN, process.env.JWT_SECRET);
       const { status, body } = await chai
-        .request(app)
+        .request(server)
         .post("/events")
         .set("authorization", `Bearer ${token}`)
         .send(data);
@@ -84,9 +88,9 @@ describe("/events route", () => {
       );
     });
 
-    it("should return status 401 if authorization header is missing", async () => {
+    it("POST_EVENT_AUTH_MISSING", async () => {
       const { status, body } = await chai
-        .request(app)
+        .request(server)
         .post("/events")
         .send(DATA);
 
@@ -94,10 +98,10 @@ describe("/events route", () => {
       expect(body.error).to.be.equal("Not Authorized");
     });
 
-    it("should return status 401 for not admin token", async () => {
+    it("POST_EVENT_INVALID_TOKEN", async () => {
       const token = jwt.sign(JWT_CLIENT, process.env.JWT_SECRET);
       const { status, body } = await chai
-        .request(app)
+        .request(server)
         .post("/events")
         .set("authorization", `Bearer ${token}`)
         .send(DATA);
@@ -107,15 +111,15 @@ describe("/events route", () => {
     });
   });
 
-  describe("PUT /:id", async () => {
+  describe("EVENTS_ROUTE_PUT_BY_ID", () => {
     const data = {
       score: "2:1",
     };
 
-    it("should update existing event and calculate all bets", async () => {
+    it("PUT_EVENT", async () => {
       const token = jwt.sign(JWT_ADMIN, process.env.JWT_SECRET);
       const { status, body } = await chai
-        .request(app)
+        .request(server)
         .put(`/events/${SEEDED_EVENT_ID}`)
         .set("authorization", `Bearer ${token}`)
         .send(data);
@@ -135,17 +139,17 @@ describe("/events route", () => {
       expect(body.score).to.be.equal(data.score);
 
       const userId = "860329e2-ae5c-49f4-ba8b-38c49c6e1838";
-      const { body: user } = await chai.request(app).get(`/users/${userId}`);
+      const { body: user } = await chai.request(server).get(`/users/${userId}`);
       expect(user.balance).to.be.equal(140);
-    }).timeout(5000);
+    });
 
-    it("should return status 400 if score field has invalid value", async () => {
+    it("PUT_EVENT_INVALID_SCORE", async () => {
       const data = {
         score: 1,
       };
       const token = jwt.sign(JWT_ADMIN, process.env.JWT_SECRET);
       const { status, body } = await chai
-        .request(app)
+        .request(server)
         .put(`/events/${SEEDED_EVENT_ID}`)
         .set("authorization", `Bearer ${token}`)
         .send(data);
@@ -154,9 +158,9 @@ describe("/events route", () => {
       expect(body.error).to.be.equal('"score" must be a string');
     });
 
-    it("should return status 401 if authorization header is missing", async () => {
+    it("PUT_EVENT_AUTH_MISSING", async () => {
       const { status, body } = await chai
-        .request(app)
+        .request(server)
         .put(`/events/${SEEDED_EVENT_ID}`)
         .send(data);
 
@@ -164,10 +168,10 @@ describe("/events route", () => {
       expect(body.error).to.be.equal("Not Authorized");
     });
 
-    it("should return status 401 for not admin token", async () => {
+    it("PUT_EVENT_INVALID_TOKEN", async () => {
       const token = jwt.sign(JWT_CLIENT, process.env.JWT_SECRET);
       const { status, body } = await chai
-        .request(app)
+        .request(server)
         .put(`/events/${SEEDED_EVENT_ID}`)
         .set("authorization", `Bearer ${token}`)
         .send(data);

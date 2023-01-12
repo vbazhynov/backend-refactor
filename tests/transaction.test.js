@@ -2,7 +2,7 @@ const chai = require("chai");
 const chaiHttp = require("chai-http");
 const jwt = require("jsonwebtoken");
 
-const { app } = require("../index");
+const { server } = require("../index");
 const { expect } = chai;
 
 console.log = () => {};
@@ -20,12 +20,16 @@ const DATA = {
 const JWT_ADMIN = { type: 'admin' };
 const JWT_CLIENT = { type: 'client' };
 
-describe("/transactions route", () => {
-  describe("POST /", async () => {
-    it("should create new transaction", async () => {
+describe("TRANSACTIONS_ROUTES", () => {
+  afterAll(() => {
+    server.close();
+  });
+
+  describe("TRANSACTIONS_ROUTE_POST", () => {
+    it("POST_TRANSACTION", async () => {
       const token = jwt.sign(JWT_ADMIN, process.env.JWT_SECRET);
       const { status, body } = await chai
-        .request(app)
+        .request(server)
         .post("/transactions")
         .set("authorization", `Bearer ${token}`)
         .send(DATA);
@@ -43,7 +47,7 @@ describe("/transactions route", () => {
       expect(body.currentBalance).to.be.equal(50);
     });
 
-    it("should return status 400 if amount has invalid value", async () => {
+    it("POST_TRANSACTION_INVALID_AMOUNT", async () => {
       const data = {
         ...DATA,
         amount: -1,
@@ -51,7 +55,7 @@ describe("/transactions route", () => {
 
       const token = jwt.sign(JWT_ADMIN, process.env.JWT_SECRET);
       const { status, body } = await chai
-        .request(app)
+        .request(server)
         .post("/transactions")
         .set("authorization", `Bearer ${token}`)
         .send(data);
@@ -62,9 +66,9 @@ describe("/transactions route", () => {
       );
     });
 
-    it("should return status 401 if authorization header is missing", async () => {
+    it("POST_TRANSACTION_AUTH_MISSING", async () => {
       const { status, body } = await chai
-        .request(app)
+        .request(server)
         .post("/transactions")
         .send(DATA);
 
@@ -72,10 +76,10 @@ describe("/transactions route", () => {
       expect(body.error).to.be.equal("Not Authorized");
     });
 
-    it("should return status 401 for not admin token", async () => {
+    it("POST_TRANSACTION_INVALID_TOKEN", async () => {
         const token = jwt.sign(JWT_CLIENT, process.env.JWT_SECRET);
         const { status, body } = await chai
-          .request(app)
+          .request(server)
           .post("/transactions")
           .set("authorization", `Bearer ${token}`)
           .send(DATA);
@@ -84,7 +88,7 @@ describe("/transactions route", () => {
         expect(body.error).to.be.equal("Not Authorized");
       });
 
-      it("should return status 400 if user does not exist", async () => {
+      it("POST_TRANSACTION_USER_NOT_FOUND", async () => {
         const data = {
           ...DATA,
           userId: "5d16d28f-f190-4e74-89bb-0fc1455d7cc6",
@@ -92,7 +96,7 @@ describe("/transactions route", () => {
   
         const token = jwt.sign(JWT_ADMIN, process.env.JWT_SECRET);
         const { status, body } = await chai
-          .request(app)
+          .request(server)
           .post("/transactions")
           .set("authorization", `Bearer ${token}`)
           .send(data);

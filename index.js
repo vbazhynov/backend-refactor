@@ -479,7 +479,7 @@ app.get("/stats", (req, res) => {
   }
 });
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   statEmitter.on('newUser', () => {
     stats.totalUsers++;
   });
@@ -494,4 +494,4 @@ app.listen(port, () => {
 });
 
 // Do not change this line
-module.exports = { app };
+module.exports = { app, server };

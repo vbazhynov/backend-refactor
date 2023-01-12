@@ -2,19 +2,23 @@ const chai = require("chai");
 const chaiHttp = require("chai-http");
 const jwt = require("jsonwebtoken");
 
-const { app } = require("../index");
+const { server } = require("../index");
 const { expect } = chai;
 
 console.log = () => {};
 
 chai.use(chaiHttp);
 
-describe("/stats route", () => {
-  describe("GET /", async () => {
-    it("should return server stats", async () => {
+describe("STATS_ROUTES", () => {
+  afterAll(() => {
+    server.close();
+  });
+
+  describe("STATS_ROUTE_GET", () => {
+    it("GET_STATS", async () => {
       const token = jwt.sign({ type: "admin" }, process.env.JWT_SECRET);
       const { status, body } = await chai
-        .request(app)
+        .request(server)
         .get(`/stats`)
         .set("authorization", `Bearer ${token}`);
       expect(status).to.be.equal(200);
@@ -23,10 +27,10 @@ describe("/stats route", () => {
       expect(body.totalEvents).to.be.equal(2);
     });
 
-    it("should return status 401 for not admin token", async () => {
+    it("GET_STATS_INVALID_TOKEN", async () => {
       const token = jwt.sign({ type: "client" }, process.env.JWT_SECRET);
       const { status, body } = await chai
-        .request(app)
+        .request(server)
         .get(`/stats`)
         .set("authorization", `Bearer ${token}`)
         .send();

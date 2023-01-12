@@ -2,7 +2,7 @@ const chai = require('chai');
 const chaiHttp = require('chai-http');
 const jwt = require('jsonwebtoken');
 
-const { app } = require('../index');
+const { server } = require('../index');
 const { expect } = chai;
 
 console.log = () => {};
@@ -20,38 +20,42 @@ const DATA = {
   email: 'roman@gmail.com',
 };
 
-describe('/users route', () => {
-  describe('GET /:id', async () => {
-    it('should return user by id', async () => {
+describe('USERS_ROUTES', () => {
+  afterAll(() => {
+    server.close();
+  });
+
+  describe('USERS_ROUTE_GET_BY_ID', () => {
+    it('GET_USER_BY_ID', async () => {
       const userId = 'c486ab55-5c4b-4689-8f57-ace155ea65b4';
-      const { status, body } = await chai.request(app).get(`/users/${userId}`);
+      const { status, body } = await chai.request(server).get(`/users/${userId}`);
       expect(status).to.be.equal(200);
       expect(body.id).to.be.equal(userId);
       expect(body.name).to.be.equal('Alex');
       expect(body.type).to.be.equal('client');
     });
 
-    it('should return status 404 if user is not found', async () => {
+    it('GET_USER_BY_ID_NOT_FOUND', async () => {
       const userId = '79829044-086e-4d8f-8538-23a4b28ae00f';
-      const { status, body } = await chai.request(app).get(`/users/${userId}`);
+      const { status, body } = await chai.request(server).get(`/users/${userId}`);
       expect(status).to.be.equal(404);
       expect(body.error).to.be.equal('User not found');
     });
 
-    it('should return status 400 if userId is not UUID', async () => {
+    it('GET_USER_BY_ID_INVALID_ID', async () => {
       const userId = '12345';
-      const { status, body } = await chai.request(app).get(`/users/${userId}`);
+      const { status, body } = await chai.request(server).get(`/users/${userId}`);
       expect(status).to.be.equal(400);
       expect(body.error).to.be.equal('"id" must be a valid GUID');
     });
   });
 
-  describe('PUT /:id', async () => {
-    it('should update user by id', async () => {
+  describe('USERS_ROUTE_PUT_BY_ID', () => {
+    it('PUT_USER_BY_ID', async () => {
       const token = jwt.sign({ id: SEEDED_USER_ID }, process.env.JWT_SECRET);
 
       const { status, body } = await chai
-        .request(app)
+        .request(server)
         .put(`/users/${SEEDED_USER_ID}`)
         .set('authorization', `Bearer ${token}`)
         .send({ name: 'Oleg' });
@@ -61,9 +65,9 @@ describe('/users route', () => {
       expect(body.name).to.be.equal('Oleg');
     });
 
-    it('should return status 401 if authorization header is missing', async () => {
+    it('PUT_USER_BY_ID_AUTH_MISSING', async () => {
       const { status, body } = await chai
-        .request(app)
+        .request(server)
         .put(`/users/${SEEDED_USER_ID}`)
         .send({ name: 'Oleg' });
 
@@ -71,14 +75,14 @@ describe('/users route', () => {
       expect(body.error).to.be.equal('Not Authorized');
     });
 
-    it('should return status 401 if token is not valid', async () => {
+    it('PUT_USER_BY_ID_INVALID_TOKEN', async () => {
       const token = jwt.sign(
         { id: SEEDED_USER_ID },
         `invalid_${process.env.JWT_SECRET}`
       );
 
       const { status, body } = await chai
-        .request(app)
+        .request(server)
         .put(`/users/${SEEDED_USER_ID}`)
         .set('authorization', `Bearer ${token}`)
         .send({ name: 'Oleg' });
@@ -87,18 +91,18 @@ describe('/users route', () => {
       expect(body.error).to.be.equal('Not Authorized');
     });
 
-    it('should return status 400 if userId is not UUID', async () => {
+    it('PUT_USER_BY_ID_INVALID_ID', async () => {
       const userId = '12345';
-      const { status, body } = await chai.request(app).get(`/users/${userId}`);
+      const { status, body } = await chai.request(server).get(`/users/${userId}`);
       expect(status).to.be.equal(400);
       expect(body.error).to.be.equal('"id" must be a valid GUID');
     });
 
-    it('should return status 400 if payload has "balance" field', async () => {
+    it('PUT_USER_BY_ID_RESTRICTED_FIELD', async () => {
       const token = jwt.sign({ id: SEEDED_USER_ID }, process.env.JWT_SECRET);
 
       const { status, body } = await chai
-        .request(app)
+        .request(server)
         .put(`/users/${SEEDED_USER_ID}`)
         .set('authorization', `Bearer ${token}`)
         .send({ balance: 100 });
@@ -107,11 +111,11 @@ describe('/users route', () => {
       expect(body.error).to.be.equal('"balance" is not allowed');
     });
 
-    it('should return status 401 if userId from token is different than in params', async () => {
+    it('PUT_USER_BY_ID_AUTH_DISCREPANCY', async () => {
       const token = jwt.sign({ id: SEEDED_USER_ID }, process.env.JWT_SECRET);
 
       const { status, body } = await chai
-        .request(app)
+        .request(server)
         .put('/users/d0bb4a01-58b7-4b96-81d2-e881b6a2a886')
         .set('authorization', `Bearer ${token}`)
         .send({ name: 'Ivan' });
@@ -120,11 +124,11 @@ describe('/users route', () => {
       expect(body.error).to.be.equal('UserId mismatch');
     });
 
-    it('should return status 400 if email is not unique', async () => {
+    it('PUT_USER_BY_ID_EMAIL_ALREADY_TAKEN', async () => {
       const token = jwt.sign({ id: SEEDED_USER_ID }, process.env.JWT_SECRET);
 
       const { status, body } = await chai
-        .request(app)
+        .request(server)
         .put(`/users/${SEEDED_USER_ID}`)
         .set('authorization', `Bearer ${token}`)
         .send({ email: 'alex@gmail.com' });
@@ -136,10 +140,10 @@ describe('/users route', () => {
     });
   });
 
-  describe('POST /', async () => {
-    it('should create new user', async () => {
+  describe('USERS_ROUTE_POST', () => {
+    it('POST_USER', async () => {
       const { status, body } = await chai
-        .request(app)
+        .request(server)
         .post('/users')
         .send(DATA);
 
@@ -159,14 +163,14 @@ describe('/users route', () => {
       expect(body.balance).to.be.equal(0);
     });
 
-    it('should return status 400 if phone has invalid format', async () => {
+    it('POST_USER_INVALID_PHONE', async () => {
       const user = {
         ...DATA,
         phone: '3804321144670',
       };
 
       const { status, body } = await chai
-        .request(app)
+        .request(server)
         .post('/users')
         .send(user);
 
@@ -176,7 +180,7 @@ describe('/users route', () => {
       );
     });
 
-    it('should return status 400 if phone is not unique', async () => {
+    it('POST_USER_PHONE_ALREADY_TAKEN', async () => {
       const user = {
         ...DATA,
         id: '843abc9c-8a00-4326-a7ee-2526c733fa08',
@@ -185,7 +189,7 @@ describe('/users route', () => {
       };
 
       const { status, body } = await chai
-        .request(app)
+        .request(server)
         .post('/users')
         .send(user);
 
@@ -195,7 +199,7 @@ describe('/users route', () => {
       );
     });
 
-    it('should return status 400 if email is not unique', async () => {
+    it('POST_USER_EMAIL_ALREADY_TAKEN', async () => {
       const user = {
         ...DATA,
         id: 'fcf4744d-b8d0-4f95-bafb-38d1971180d3',
@@ -203,7 +207,7 @@ describe('/users route', () => {
       };
 
       const { status, body } = await chai
-        .request(app)
+        .request(server)
         .post('/users')
         .send(user);
 

@@ -36,6 +36,7 @@ Technologies:
 **Warning**:
 
 - `index.js` file **must** export an Express server instance
+- do not edit files in `tests` folder, the original ones will be used after all
 
 **Optional tasks**:
 

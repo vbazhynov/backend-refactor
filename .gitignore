@@ -2,6 +2,9 @@ node_modules/
 .docker_pgdata/
 .docker_pgdata_test/
 .idea/
+feedback/
 
 .env
 package-lock.json
+report.json
+result.json

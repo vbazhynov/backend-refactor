@@ -8,6 +8,11 @@ services:
       POSTGRES_DB: hw_db_test
       POSTGRES_USER: hw_user
       POSTGRES_PASSWORD: hw_password
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-q", "-d", "hw_db_test", "-U", "hw_user" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     volumes:
       - './.docker_pgdata_test:/var/lib/postgresql/data'
     ports:
@@ -19,7 +24,8 @@ services:
     command: npm run test
     container_name: hm_test
     depends_on:
-      - hw_db_test
+      hw_db_test:
+        condition: service_healthy
     ports:
       - '3050:3050'
     environment:
