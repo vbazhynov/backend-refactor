@@ -2,6 +2,10 @@ import { Router } from "express";
 import jwt from "jsonwebtoken";
 import { db } from "../../index.js";
 import { validateBody, validateParams } from "../helpers/schema.validator.js";
+import {
+  tokenValidator,
+  userDismatchValidator,
+} from "../helpers/token.validator.js";
 
 const router = Router();
 
@@ -57,43 +61,36 @@ router.post("/", validateBody("usersPost"), (req, res) => {
     });
 });
 
-router.put("/:id", validateBody("usersPut"), (req, res) => {
-  let token = req.headers["authorization"];
-  let tokenPayload;
-  if (!token) {
-    return res.status(401).send({ error: "Not Authorized" });
-  }
-  token = token.replace("Bearer ", "");
-  try {
-    tokenPayload = jwt.verify(token, process.env.JWT_SECRET);
-  } catch (err) {
-    return res.status(401).send({ error: "Not Authorized" });
-  }
-
-  if (req.params.id !== tokenPayload.id) {
-    return res.status(401).send({ error: "UserId mismatch" });
-  }
-  db("user")
-    .where("id", req.params.id)
-    .update(req.body)
-    .returning("*")
-    .then(([result]) => {
-      return res.send({
-        ...result,
-      });
-    })
-    .catch((err) => {
-      if (err.code == "23505") {
-        console.log(err);
-        res.status(400).send({
-          error: err.detail,
+router.put(
+  "/:id",
+  validateBody("usersPut"),
+  tokenValidator,
+  userDismatchValidator,
+  (req, res) => {
+    console.log(req.body.user_id);
+    console.log(req.params.id);
+    db("user")
+      .where("id", req.params.id)
+      .update(req.body)
+      .returning("*")
+      .then(([result]) => {
+        return res.send({
+          ...result,
         });
+      })
+      .catch((err) => {
+        if (err.code == "23505") {
+          console.log(err);
+          res.status(400).send({
+            error: err.detail,
+          });
+          return;
+        }
+        console.log(err);
+        res.status(500).send("Internal Server Error");
         return;
-      }
-      console.log(err);
-      res.status(500).send("Internal Server Error");
-      return;
-    });
-});
+      });
+  }
+);
 
 export default router;

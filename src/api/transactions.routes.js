@@ -2,25 +2,12 @@ import { Router } from "express";
 import { validateBody } from "../helpers/schema.validator.js";
 import jwt from "jsonwebtoken";
 import { db } from "../../index.js";
+import { tokenValidator } from "../helpers/token.validator.js";
 
 const router = Router();
 
-router.post("/", validateBody("transactions"), (req, res) => {
-  let token = req.headers["authorization"];
-  if (!token) {
-    return res.status(401).send({ error: "Not Authorized" });
-  }
-  token = token.replace("Bearer ", "");
-  try {
-    var tokenPayload = jwt.verify(token, process.env.JWT_SECRET);
-    console.log(tokenPayload);
-    if (tokenPayload.type != "admin") {
-      throw new Error();
-    }
-  } catch (err) {
-    return res.status(401).send({ error: "Not Authorized" });
-  }
-
+router.post("/", validateBody("transactions"), tokenValidator, (req, res) => {
+  console.log(req.body.user_id);
   db("user")
     .where("id", req.body.userId)
     .then(([user]) => {

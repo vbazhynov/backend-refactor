@@ -2,34 +2,19 @@ import { Router } from "express";
 import jwt from "jsonwebtoken";
 import { db } from "../../index.js";
 import { validateBody } from "../helpers/schema.validator.js";
+import { tokenValidator } from "../helpers/token.validator.js";
 const router = Router();
 
-router.post("/", validateBody("bets"), (req, res) => {
-  let userId;
+router.post("/", validateBody("bets"), tokenValidator, (req, res) => {
   try {
-    let token = req.headers["authorization"];
-    if (!token) {
-      return res.status(401).send({ error: "Not Authorized" });
-    }
-    token = token.replace("Bearer ", "");
-    try {
-      var tokenPayload = jwt.verify(token, process.env.JWT_SECRET);
-      console.log(tokenPayload);
-      userId = tokenPayload.id;
-    } catch (err) {
-      console.log(err);
-      return res.status(401).send({ error: "Not Authorized" });
-    }
-
     req.body.event_id = req.body.eventId;
     req.body.bet_amount = req.body.betAmount;
     delete req.body.eventId;
     delete req.body.betAmount;
-    req.body.user_id = userId;
     db.select()
       .table("user")
       .then((users) => {
-        var user = users.find((u) => u.id == userId);
+        var user = users.find((u) => u.id == req.body.user_id);
         if (!user) {
           res.status(400).send({ error: "User does not exist" });
           return;

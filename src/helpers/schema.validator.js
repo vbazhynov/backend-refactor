@@ -6,13 +6,13 @@ const validateBody = (route) => {
     try {
       const validated = await schema[route].validateAsync(req.body);
       req.body = validated;
-      next();
     } catch (err) {
       if (err.isJoi) {
         return next(createError(422, { message: err.message }));
       }
       next(createError(500));
     }
+    next();
   };
 };
 
