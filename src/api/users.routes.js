@@ -67,8 +67,6 @@ router.put(
   tokenValidator,
   userDismatchValidator,
   (req, res) => {
-    console.log(req.body.user_id);
-    console.log(req.params.id);
     db("user")
       .where("id", req.params.id)
       .update(req.body)

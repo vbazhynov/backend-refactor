@@ -22,6 +22,7 @@ const userDismatchValidator = (req, res, next) => {
   if (req.params.id !== req.body.user_id) {
     return res.status(401).send({ error: "UserId mismatch" });
   }
+  delete req.body.user_id;
   next();
 };
 
